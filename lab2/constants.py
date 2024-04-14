@@ -1,0 +1,1 @@
+BCRYPT_COST: int = 12

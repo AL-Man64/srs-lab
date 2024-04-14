@@ -1,0 +1,41 @@
+Sustav sprema bazu zaporki u obliku JSON datoteke u matični direktorij
+korisnika (datoteka ~/pm_vault.json).
+
+Zaporke, naravno, nisu izravno spremljene već se šifriraju ključem koji se
+izvodi iz glavne zaporke.
+
+Ključ se izvodi scrypt algoritmom koji "pod haubom" koristi PBKDF2 algoritam,
+te se ne izvodi iz same šifre, nego koristi i "salt" koja se zajedno s ostatkom
+podataka sprema u bazu.
+
+Pri inicijalizaciji baze se sprema "challenge string" čija je svrha osigurati
+da se sa takvom, praznom, bazom može potvrditi točnost glavne zaporke. Taj
+string se nakon dodavanje prve zaporke uklanja, te više ne koristi.
+
+Zaporke, kao i challenge string, se enkriptiraju AES (GCM) algoritmom, koji uz
+enkripciju podataka stvara i tag koji se koristi za porvrdu integriteta baze
+tokom njene dekripcije. Uz to, algoritam koristi i nonce kako bi za svaku
+promjenu podataka - promijenio enkriptirane podatke, čak iako promjene nije
+bilo.
+
+Algoritam, u biblioteci koju sam koristio, očekuje duljinu ulaza da bude jednaka
+duljini izlaza, što sam odlučio riješiti paddingom adrese i zaporke nasumičnim
+podatcima, te na kraj ulaza zapisujem informaciju o duljini izvornih podataka
+(ukupno 64 byte-a), te taj cijeli ulaz enkriptiram, i njegov izlaz spremam u
+bazu.
+
+Pojednostavljeni tok programa
+
+- parsiraj argumente i pokreni odgovarajuću akciju
+- izvedi ključ iz zaporke (za sve akcije)
+- init
+  - stvori salt
+  - stvori challenge string i sve povezane podatke
+  - spremi dobivene podatke u bazu
+- koristi dobiveni ključ za dekripciju podataka u bazi (put i get)
+- ako bilo koji od podataka ima narušen integritet, vrati grešku korisniku (put i get)
+- put
+  - enkriptiraj zadanu adresu i zaporku
+  - spremi nove podatke u bazu podataka
+- get
+  - dohvati traženi podatak

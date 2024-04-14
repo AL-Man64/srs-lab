@@ -1,0 +1,64 @@
+# Opis sustava
+
+## Implementacijske tehnologije
+
+Sustav koristi programski jezik python uz biblioteku pycryptodome za korištenje
+postojećih rješenja za kriptografske funkcije.
+
+## Spremanje lozinki
+
+### Pohrana na disk
+
+Za pohranu podataka se koristi csv datoteka.
+
+U datoteku se spremaju stupci username,salt,hash,forcepass.
+
+Datoteka se sprema u matični direktorij trenutnog korisnika (~/users.csv na
+unixoidnim sustavima), što se po potrebi može lako promijeniti.
+
+### Rad sustava, zaštite
+
+Sustav će pri stvaranju korisnika tražiti unos lozinke dva puta.
+
+Ako je lozinka kraća od 8 znakova, vratit će grešku da je lozinka prekratka,
+što još uvijek ne štiti u slučaju loše lozinke, primjerice slavne lozinke
+'password', ali je neka minimalna zaštita koju očekujem da sustavi nameću.
+U slučaju kratke lozinke, sustav neće drugi put pitati za lozinku.
+
+Ako se dvije lozinke ne podudaraju, sustav vraća grešku da se ne podudaraju.
+
+U oba slučaja greške, korisnik se, naravno, neće spremiti u datoteku.
+
+U slučaju da nije nastupilo do jedne od ovih greški, sustav će početi s
+hash-iranjem lozinke, pri tom koristeći slučajno generiranu salt vrijednost.
+Sustav koristi kriptografsku hash funkciju 'bcrypt', uz cijenu 12, koja je
+minimalna preporučena vrijednost za nju, te se lako može promijeniti u datoteci
+./constants.py
+
+generirane salt i hash vrijednosti se zatim spremaju u bazu korisnika, zajedno
+sa username-om i zastavicom forcepass.
+
+Ovaj postupak se radi pri korištenju programa za stvaranje korisnika i
+mijenjanje njegove šifre.
+
+U slučaju da se program koristi za forcepass i brisanje korisnika, on samo
+mijenja odgovarajuće vrijednosti u bazi korisnika
+
+Program login.py će pri logiranju korisnika koristiti isti postupak hash-iranja
+šifre, ali u ovom slučaju koristi spremljenu salt, i uspoređuje spremljeni hash
+sa upravo dobivenim hash-om, te ako je lozinka potvrđena, korisnik se
+prijavljuje u bash ljusku (u ovom slučaju sam samo postavio varijablu LV_USER
+u ljusci da označim tu prijavu)
+
+U slučaju da je forcepass zastavica na vrijednosti True, korisnik će biti pitan
+da promijeni svoju šifru, za što se opet koristi prethodno opisani postupak, te
+se zastavica resetira na False.
+
+### bcrypt
+
+Kao što je spomenuto, sustav koristi bcrypt, što je kriptografska hash funkcija
+stvorena za hash-iranje šifri. Uz to dobiva vrijednosti salt i cost, od kojih
+cost označava komputacijsku cijenu korištenja funkcije. Ovo stvara veću
+otpornost na brute-force napade, jer hash traje duži period vremena. Salt se
+koristi kako se ne bi prepoznale već "razbijene" šifre dodavanjem nasumičnih
+bajtova na nju.
